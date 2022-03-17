@@ -5,7 +5,7 @@
  * @param {*} source 数据源 glsl 
  * @returns shader
  */
-const createShader = (gl, type, source) => {
+export const createShader = (gl, type, source) => {
     const shader = gl.createShader(type) // 着色器对象生成
     gl.shaderSource(shader, source) // 数据源关联
 
@@ -28,8 +28,8 @@ const createShader = (gl, type, source) => {
  * @param {*} fragmentShader 片段着色器
  * @returns 着色器程序
  */
-const createProgram = (gl, vertexShader, fragmentShader) => {
-   
+export const createProgram = (gl, vertexShader, fragmentShader) => {
+
     const program = gl.createProgram()  // 创建着色器程序并链接 shader
     gl.attachShader(program, vertexShader)
     gl.attachShader(program, fragmentShader)
@@ -43,9 +43,4 @@ const createProgram = (gl, vertexShader, fragmentShader) => {
     }
 
     gl.deleteProgram(program)
-}
-
-export default {
-    createProgram,
-    createShader
 }
