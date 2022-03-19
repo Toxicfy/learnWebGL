@@ -8,11 +8,9 @@
 export const createShader = (gl, type, source) => {
     const shader = gl.createShader(type) // 着色器对象生成
     gl.shaderSource(shader, source) // 数据源关联
+    gl.compileShader(shader) // 编译生成着色器
 
-    gl.completeShader(shader) // 编译生成着色器
-
-    const status = gl.getShaderParameter(shader, gl.COMPLICE_STATUS)
-
+    const status = gl.getShaderParameter(shader, gl.COMPILE_STATUS)
     // 如果创建成功，则返回 shader
     if (status) {
         return shader
@@ -43,4 +41,20 @@ export const createProgram = (gl, vertexShader, fragmentShader) => {
     }
 
     gl.deleteProgram(program)
+}
+
+/**
+ * 创建 buffer
+ * @param {*} bufferData 
+ * @returns buffer
+ */
+export const createArrayBuffer = (gl, bufferData) => {
+    const buffer = gl.createBuffer() // 创建缓冲对象
+    // WebGL可以通过绑定点操控全局范围内的许多数据
+    // 绑定一个数据源到绑定点，就可以引用绑定点指向该数据源（即：ARRAY_BUFFER指向缓冲数据 positionBuffer）
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+    // Q: 为什么要返回 positionBuffer 对象，它包含了什么？？
+    // A: 通过bindBuffer，ARRAY_BUFFER 指向 positionBuffer，然后 bufferData() 方法复制这些数据到了缓冲对象上，也就完成了缓冲数据的绑定
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(bufferData), gl.STATIC_DRAW)
+    return buffer
 }

@@ -1,25 +1,53 @@
-import { createShader, createProgram } from './createShader&Program'
+import { createShader, createProgram, createArrayBuffer } from './createUtils.js'
 
-const initBuffer = (gl) => {
-    // 创建缓冲对象
-    const positionBuffer = gl.createBuffer()
-    // WebGL可以通过绑定点操控全局范围内的许多数据
-    // 绑定一个数据源到绑定点，就可以引用绑定点指向该数据源（即：ARRAY_BUFFER指向缓冲数据 positionBuffer）
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-
-    const vertices = [
-        1.0, 1.0, 0.0,
-        -1.0, 1.0, 0.0,
-        1.0, -1.0, 0.0,
-        -1.0, -1.0, 0.0
-    ]
-    // 通过绑定点（gl.ARRAY_BUFFER）向缓冲（positionBuffer）存放数据
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
-
-    return {
-        // Q: 为什么要返回 positionBuffer 对象，它包含了什么？？
-        // A: 通过bindBuffer，ARRAY_BUFFER 指向 positionBuffer，然后 bufferData() 方法复制这些数据到了缓冲对象上，也就完成了缓冲数据的绑定
-        position: positionBuffer
+// 确认渲染的位置
+const vertexShaderSource = `
+    attribute vec4 myVertexPosition;
+    void main() {
+        gl_Position = myVertexPosition
     }
+`
+// 确定渲染的颜色
+const fragmentShaderSource = `
+    void main() {
+        gl_FragColor = vec4(1.0, 0, 0.5, 0.5)
+`
 
+const main = () => {
+    const canvas = document.createElement('canvas')
+    document.body.appendChild(canvas)
+    const gl = canvas.getContext('webgl')
+
+    gl.clearColor(0, 0, 0, 0.1)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
+
+    console.log(vertexShader, fragmentShader);
+    // 通过 shader 创建 着色器程序
+    const program = createProgram(gl, vertexShader, fragmentShader)
+    gl.useProgram(program)
+
+    // 创建缓冲器存储对象的顶点
+    const position = [
+        0, 0,
+        0, 0.5,
+        0.7, 0.5,
+        0.7, 0,
+    ]
+    createArrayBuffer(gl, position)
+
+    // 指定 attribute 如何从 buffer 中读取数据
+    const location = gl.getAttribLocation(program, 'myVertexPosition') // 获取指向位置
+    const size = 2 // 每次读取几个单位的数据
+    const type = gl.FLOAT
+    const normalize = false
+    const stride = 0
+    const offset = 0 // 起始位置偏移多少
+    gl.vertexAttribPointer(location, size, type, normalize, stride, offset)
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 }
+
+export default main
