@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <title>绘制动态点</title>
+</head>
+
+<body onload="init()">
+    <canvas id="webglCanvas" width="500" height="500"></canvas>
+    <script>
+        const _initShader = (gl, type, shaderSource) => {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, shaderSource);
+            gl.compileShader(shader);
+            return shader;
+        }
+        const _initProgram = (gl, shaderArr = []) => {
+            const program = gl.createProgram();
+            shaderArr.forEach(shader => {
+                gl.attachShader(program, shader)
+            });
+            gl.linkProgram(program)
+            gl.useProgram(program)
+            return program;
+        }
+    </script>
+    <script>
+        const canvas = document.getElementById("webglCanvas");
+        const gl = canvas.getContext("webgl")
+        // let projMat4 = mat4.create(); // 初始化一个投影矩阵
+
+        const vertexString = `
+            attribute vec4 a_position;
+
+            void main() {
+                gl_Position = a_position;
+                gl_PointSize = 60.0;
+            }
+        `
+        const fragmentString = `
+            void main(void) {
+                gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+            }
+        `
+
+        function initWebgl () {
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            // 计算投影矩阵并赋值给 projMat4
+            // mat4.ortho(0, canvas.clientWidth, canvas.clientHeight, 0, -1, 1, projMat4)
+        }
+
+        function initShaderAndProgram () {
+            //  shader: createByType => setShaderSource => compileShader
+            const vertexShader = _initShader(gl, gl.VERTEX_SHADER, vertexString)
+            const fragmentShader = _initShader(gl, gl.FRAGMENT_SHADER, fragmentString)
+            // program： createProgram => attachShader => linkProgram => useProgram
+            const program = _initProgram(gl, [vertexShader, fragmentShader])
+            gl.currentProgram = program
+        }
+
+        function initBuffer () {
+            const a_PositionAttributeIndex = gl.getAttribLocation(gl.currentProgram, 'a_position')
+            document.addEventListener("mousedown", ev => {
+                const rect = ev.target.getBoundingClientRect();
+                const canvas_x = ev.clientX - rect.left;
+                const canvas_y = ev.clientY - rect.top;
+                const gl_x = (canvas_x - (canvas.width / 2)) / (canvas.width / 2);
+                const gl_y = -(canvas_y - (canvas.height / 2)) / (canvas.height / 2)
+
+                const currentPosition = [gl_x, gl_y, 0, 1.0];
+                const bufferData = new Float32Array(currentPosition)
+
+                const buffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.STATIC_DRAW);
+
+                // 激活 a_position attribute 取值
+                gl.enableVertexAttribArray(a_PositionAttributeIndex)
+                // 告诉显卡从当前绑定的缓冲区（bindBuffer()指定的缓冲区）中读取顶点数据。
+                //  gl.vertexAttribPointer(index, size, type, normalized, stride, offset);
+                gl.vertexAttribPointer(a_PositionAttributeIndex, 4, gl.FLOAT, false, 0, 0)
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                // mode,first,count
+                gl.drawArrays(gl.POINTS, 0, 1);
+            })
+        }
+
+
+        const init = () => {
+            initWebgl()
+            initShaderAndProgram()
+            initBuffer()
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        }
+    </script>
+</body>
+
+</html>
