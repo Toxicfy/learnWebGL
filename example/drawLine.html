@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绘制线</title>
+    <script src="./glMatrix.js"></script>
+</head>
+
+<body onload="init()">
+    <canvas id="myCanvas" width="1000" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById("myCanvas");
+        const gl = canvas.getContext("webgl");
+        const projMat4 = mat4.create();
+
+        const vertexString = `
+            attribute vec4 a_position;
+            uniform mat4 proj;
+            void main(void) {
+                gl_Position = proj * a_position;
+            }
+        `
+        const fragmentString = `
+            void main(void) {
+                gl_FragColor = vec4(1.0,0,1.0,1.0);
+            }
+        `
+
+        const initWebgl = () => {
+            gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight)
+            mat4.ortho(0, canvas.clientWidth, canvas.clientHeight, 0, -1, 1, projMat4)
+        }
+
+        const _initShader = (gl, type, shaderSource) => {
+            const shader = gl.createShader(type)
+            gl.shaderSource(shader, shaderSource)
+            gl.compileShader(shader)
+            return shader
+        }
+
+        const initShaderAndProgram = () => {
+            const vertexShader = _initShader(gl, gl.VERTEX_SHADER, vertexString)
+            const fragmentShader = _initShader(gl, gl.FRAGMENT_SHADER, fragmentString)
+
+            const program = gl.createProgram()
+            gl.attachShader(program, vertexShader)
+            gl.attachShader(program, fragmentShader)
+
+            gl.linkProgram(program)
+            gl.useProgram(program)
+
+            gl.currentProgram = program
+        }
+
+        const initBuffer = () => {
+            const attributePosition = gl.getAttribLocation(gl.currentProgram, 'a_position')
+
+            const buffer = gl.createBuffer()
+            const data = [
+                100, 100, 0, 1.0,
+                200, 200, 0, 1.0,
+
+                300.0, 200.0, 0, 1.0,
+                400, 600, 0, 1.0,
+            ]
+
+            const vertexData = new Float32Array(data)
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+            gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW)
+
+            gl.enableVertexAttribArray(attributePosition)  // 开启可以使用该 attribute
+            gl.vertexAttribPointer(attributePosition, 4, gl.FLOAT, false, 0, 0)
+
+            // 设置坐标系
+            let uniformProj = gl.getUniformLocation(gl.currentProgram, 'proj')
+            gl.uniformMatrix4fv(uniformProj, false, projMat4)
+        }
+
+        function init () {
+            initWebgl()
+            initShaderAndProgram()
+
+            initBuffer()
+
+            gl.clearColor(0.0, 0.0, 0.0, 1.0)
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+            gl.drawArrays(gl.LINE_LOOP, 0, 4)
+        }
+    </script>
+</body>
+
+</html>
