@@ -5,33 +5,32 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>绘制线</title>
+    <title>绘制三角形</title>
     <script src="./glMatrix.js"></script>
 </head>
 
 <body onload="init()">
-    <canvas id="myCanvas" width="1000" height="600"></canvas>
-
+    <canvas id="container" width="800" height="600"></canvas>
     <script>
-        const canvas = document.getElementById("myCanvas");
-        const gl = canvas.getContext("webgl");
-        const projMat4 = mat4.create();
+        const canvas = document.getElementById("container");
+        const gl = canvas.getContext('webgl')
+        let projMat4 = mat4.create();
 
         const vertexString = `
             attribute vec4 a_position;
-            uniform mat4 proj;
+            uniform mat4 projMat4;
             void main(void) {
-                gl_Position = proj * a_position;
+                gl_Position = projMat4 * a_position;
             }
         `
         const fragmentString = `
             void main(void) {
-                gl_FragColor = vec4(1.0,0,1.0,1.0);
+                gl_FragColor = vec4(0.0,0.3,1.0,1.0);
             }
         `
 
-        const initWebgl = () => {
-            gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight)
+        function initWebgl () {
+            gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
             mat4.ortho(0, canvas.clientWidth, canvas.clientHeight, 0, -1, 1, projMat4)
         }
 
@@ -42,56 +41,55 @@
             return shader
         }
 
-        const initShaderAndProgram = () => {
-            const vertexShader = _initShader(gl, gl.VERTEX_SHADER, vertexString)
-            const fragmentShader = _initShader(gl, gl.FRAGMENT_SHADER, fragmentString)
-
+        const _initProgram = (gl, shaderCollection) => {
             const program = gl.createProgram()
-            gl.attachShader(program, vertexShader)
-            gl.attachShader(program, fragmentShader)
-
+            shaderCollection.forEach(shader => {
+                gl.attachShader(program, shader)
+            });
             gl.linkProgram(program)
             gl.useProgram(program)
+            return program
+        }
 
-            gl.currentProgram = program
+        function initShaderAndProgram () {
+            const vertexShader = _initShader(gl, gl.VERTEX_SHADER, vertexString)
+            const fragmentShader = _initShader(gl, gl.FRAGMENT_SHADER, fragmentString)
+            gl.currentProgram = _initProgram(gl, [vertexShader, fragmentShader])
         }
 
         const initBuffer = () => {
             const attributePosition = gl.getAttribLocation(gl.currentProgram, 'a_position')
-
             const buffer = gl.createBuffer()
             const data = [
                 100, 100, 0, 1.0,
-                200, 200, 0, 1.0,
-
-                300.0, 200.0, 0, 1.0,
+                300, 100, 0, 1.0,
                 400, 600, 0, 1.0,
             ]
 
-            const vertexData = new Float32Array(data)
-
+            const bufferData = new Float32Array(data)
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-            gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW)
+            gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.STATIC_DRAW)
 
-            gl.enableVertexAttribArray(attributePosition)  // 开启可以使用该 attribute
+            gl.enableVertexAttribArray(attributePosition)
             gl.vertexAttribPointer(attributePosition, 4, gl.FLOAT, false, 0, 0)
 
-            // 设置坐标系
-            let uniformProj = gl.getUniformLocation(gl.currentProgram, 'proj')
+            const uniformProj = gl.getUniformLocation(gl.currentProgram, 'projMat4')
             gl.uniformMatrix4fv(uniformProj, false, projMat4)
         }
 
-        function init () {
+
+        const init = () => {
             initWebgl()
             initShaderAndProgram()
 
             initBuffer()
 
+
             gl.clearColor(0.0, 0.0, 0.0, 1.0)
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-            gl.drawArrays(gl.LINE_LOOP, 0, 4)
+            gl.drawArrays(gl.TRIANGLE_FAN, 0, 3)
         }
     </script>
 </body>
 
-</html> 
+</html>
